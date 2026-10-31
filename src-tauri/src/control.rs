@@ -473,12 +473,7 @@ fn base_session_id(session_id: &str) -> &str {
 
 /// Populates control and app endpoint / token environment variables on the child command.
 /// Supports both exact session IDs and generation-scoped keys (e.g. `session-id#0`).
-fn configure_child_from_state(
-    endpoint: &str,
-    inner: &Inner,
-    session_id: &str,
-    cmd: &mut Command,
-) {
+fn configure_child_from_state(endpoint: &str, inner: &Inner, session_id: &str, cmd: &mut Command) {
     cmd.env_remove("MONOCODE_CONTROL_ENDPOINT")
         .env_remove("MONOCODE_CONTROL_TOKEN")
         .env_remove("MONOCODE_APP_ENDPOINT")
@@ -905,20 +900,22 @@ mod tests {
         );
         let mut cmd = Command::new("dummy");
         configure_child_from_state("127.0.0.1:44000", &inner, "sess-123#0", &mut cmd);
+        assert!(cmd.get_envs().any(|(k, v)| k == "MONOCODE_APP_ENDPOINT"
+            && v == Some(std::ffi::OsStr::new("127.0.0.1:44000"))));
         assert!(cmd
             .get_envs()
-            .any(|(k, v)| k == "MONOCODE_APP_ENDPOINT" && v == Some(std::ffi::OsStr::new("127.0.0.1:44000"))));
-        assert!(cmd
-            .get_envs()
-            .any(|(k, v)| k == "MONOCODE_APP_TOKEN" && v == Some(std::ffi::OsStr::new("app-tok-123"))));
+            .any(|(k, v)| k == "MONOCODE_APP_TOKEN"
+                && v == Some(std::ffi::OsStr::new("app-tok-123"))));
 
         let mut lead_cmd = Command::new("dummy");
         configure_child_from_state("127.0.0.1:44000", &inner, "lead-456#2", &mut lead_cmd);
         assert!(lead_cmd
             .get_envs()
-            .any(|(k, v)| k == "MONOCODE_CONTROL_ENDPOINT" && v == Some(std::ffi::OsStr::new("127.0.0.1:44000"))));
+            .any(|(k, v)| k == "MONOCODE_CONTROL_ENDPOINT"
+                && v == Some(std::ffi::OsStr::new("127.0.0.1:44000"))));
         assert!(lead_cmd
             .get_envs()
-            .any(|(k, v)| k == "MONOCODE_CONTROL_TOKEN" && v == Some(std::ffi::OsStr::new("lead-tok-456"))));
+            .any(|(k, v)| k == "MONOCODE_CONTROL_TOKEN"
+                && v == Some(std::ffi::OsStr::new("lead-tok-456"))));
     }
 }
